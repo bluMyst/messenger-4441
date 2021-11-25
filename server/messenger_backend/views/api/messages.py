@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth.middleware import get_user
 from django.http import HttpResponse, JsonResponse
 from messenger_backend.models import Conversation, Message
@@ -48,3 +50,77 @@ class Messages(APIView):
             return JsonResponse({"message": message_json, "sender": sender})
         except Exception as e:
             return HttpResponse(status=500)
+
+    def patch(self, request):
+        """Expects json in the form:
+
+        {'action': 'markRead',
+         'conversationId': <int>,
+         'messageIds': <list of ints>}
+
+        (there may be support for other actions in the future)
+
+        If all goes well, this will mark all designated messages as read,
+        as long as they're part of the designated conversation.
+        """
+        user = get_user(request)
+
+        if user.is_anonymous:
+            return HttpResponse(status=HTTPStatus.UNAUTHORIZED)
+
+        if (
+            "action" not in request.data
+            or "conversationId" not in request.data
+            or "messageIds" not in request.data
+        ):
+            return JsonResponse(
+                {"error": ["missing required parameter(s)"]},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        if request.data["action"] != "markRead":
+            return JsonResponse(
+                {"error": ["unknown or invalid action", request.data["action"]]},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        try:
+            conversation_id = int(request.data["conversationId"])
+            message_ids = [int(id) for id in request.data["messageIds"]]
+
+            conversation = Conversation.objects.prefetch_related("messages").get(
+                id=conversation_id
+            )
+        except ValueError:
+            return JsonResponse(
+                {"error": ["invalid parameter(s)"]}, status=HTTPStatus.BAD_REQUEST
+            )
+        except Conversation.DoesNotExist:
+            return JsonResponse(
+                {"error": ["conversation not found", conversation_id]},
+                status=HTTPStatus.NOT_FOUND,
+            )
+
+        if conversation.user1 != user and conversation.user2 != user:
+            return JsonResponse(
+                {"error": ["you're not part of that conversation"]},
+                status=HTTPStatus.FORBIDDEN,
+            )
+
+        messages = conversation.messages.filter(id__in=message_ids).exclude(senderId=user.id)
+
+        if len(messages) < len(message_ids):
+            return JsonResponse(
+                {"error": ["not all message ids were found (or some of them were sent by you)", message_ids]},
+                status=HTTPStatus.NOT_FOUND,
+            )
+
+        assert len(messages) == len(message_ids)
+
+        for message in messages:
+            message.readByRecipient = True
+            message.save()
+            print(f'marked as read: {message}',
+                  Message.objects.get(id=message.id).readByRecipient)
+
+        return HttpResponse(status=HTTPStatus.OK)
