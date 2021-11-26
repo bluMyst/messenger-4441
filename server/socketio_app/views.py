@@ -31,6 +31,20 @@ def new_message(sid, message):
     )
 
 
+@sio.on("read-messages")
+def read_messages(sid, data):
+    """Expects data in the form:
+
+    {"conversation-id": <conversation id>,
+     "message-ids": <list of ids>}
+    """
+    sio.emit(
+        "read-messages",
+        {"conversationId": data["conversationId"], "messageIds": data["messageIds"]},
+        skip_sid=sid,
+    )
+
+
 @sio.on("logout")
 def logout(sid, user_id):
     if user_id in online_users:
