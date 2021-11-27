@@ -5,7 +5,9 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  readMessages,
 } from "../conversations";
+import { setActiveChat } from "../activeConversation";
 import { gotUser, setFetchingStatus } from "../user";
 
 axios.interceptors.request.use(async function (config) {
@@ -117,3 +119,72 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
     console.error(error);
   }
 };
+
+const saveReadMessages = async (conversationId, messageIds) => {
+  try {
+    const { data } = await axios.patch(
+      `/api/messages`,
+      {action: 'markRead', conversationId, messageIds}
+    );
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const sendReadMessages = (conversationId, messageIds) => {
+  socket.emit("read-messages", {conversationId, messageIds});
+}
+
+// the current user has read this conversation
+export const readConversation = (conversation) => async (dispatch) => {
+  const messageIds = [];
+  // get all message ids that aren't from us - since we obviously don't want
+  // to mark our own messages as read
+  conversation.messages.forEach((message) => {
+    if (message.senderId === conversation.otherUser.id && message.readByRecipient === false) {
+      messageIds.push(message.id);
+    }
+  });
+
+  if (messageIds.length <= 0) {
+    return;
+  }
+
+  dispatch(readMessages(conversation.id, messageIds));
+
+  await saveReadMessages(conversation.id, messageIds);
+  sendReadMessages(conversation.id, messageIds);
+}
+
+// set the given chat as active and mark all messages in that conversation as read.
+export const activateChat = (username) => (dispatch, getState) => {
+  dispatch(setActiveChat(username));
+
+  const conversation = getState().conversations.find((conversation) => {
+    return conversation.otherUser.username === username;
+  });
+
+  // now that the chat is activated, we've read everything in it.
+  dispatch(readConversation(conversation));
+}
+
+export const handleNewMessageSocketEvent = (message, sender) => (dispatch, getState) => {
+  dispatch(setNewMessage(message, sender));
+
+  const conversation = getState().conversations.find((conversation) => {
+    return conversation.id === message.conversationId;
+  });
+
+  // if we can't find the conversation, that means this message isn't for us
+  // and we can safely ignore it
+  if (conversation === undefined) {
+    return;
+  }
+
+  // if we just got a new message in the active conversation (the one the user
+  // is currently looking at) we should automatically mark it as read.
+  if (conversation.otherUser.username === getState().activeConversation) {
+    dispatch(readConversation(conversation));
+  }
+}
