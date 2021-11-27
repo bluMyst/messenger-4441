@@ -28,6 +28,14 @@ const Chat = (props) => {
     await props.activateChat(conversation.otherUser.username);
   };
 
+  const nUnread = conversation.messages.reduce((nUnread, message) => {
+    if (message.senderId === otherUser.id && !message.readByRecipient) {
+      return nUnread+1;
+    }
+
+    return nUnread;
+  }, 0);
+
   return (
     <Box onClick={() => handleClick(conversation)} className={classes.root}>
       <BadgeAvatar
@@ -36,7 +44,7 @@ const Chat = (props) => {
         online={otherUser.online}
         sidebar={true}
       />
-      <ChatContent conversation={conversation} />
+      <ChatContent conversation={conversation} nUnread={nUnread} />
     </Box>
   );
 };
