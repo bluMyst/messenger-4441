@@ -120,11 +120,11 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   }
 };
 
-const saveReadMessages = async (conversationId, messageIds) => {
+const saveReadMessages = async (conversationId) => {
   try {
     const { data } = await axios.patch(
       `/api/messages`,
-      {action: 'markRead', conversationId, messageIds}
+      {conversationId}
     );
     return data;
   } catch (error) {
@@ -153,7 +153,7 @@ export const readConversation = (conversation) => async (dispatch) => {
 
   dispatch(readMessages(conversation.id, messageIds));
 
-  await saveReadMessages(conversation.id, messageIds);
+  await saveReadMessages(conversation.id);
   sendReadMessages(conversation.id, messageIds);
 }
 

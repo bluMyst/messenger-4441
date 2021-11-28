@@ -54,46 +54,32 @@ class Messages(APIView):
     def patch(self, request):
         """Expects json in the form:
 
-        {'action': 'markRead',
-         'conversationId': <int>,
-         'messageIds': <list of ints>}
+        {'conversationId': <int>}
 
-        (there may be support for other actions in the future)
-
-        If all goes well, this will mark all designated messages as read,
-        as long as they're part of the designated conversation.
+        If all goes well, this will mark all messages in the designated
+        conversation as read, as long as they weren't sent by the requesting
+        user.
         """
         user = get_user(request)
 
         if user.is_anonymous:
             return HttpResponse(status=HTTPStatus.UNAUTHORIZED)
 
-        if (
-            "action" not in request.data
-            or "conversationId" not in request.data
-            or "messageIds" not in request.data
-        ):
+        if "conversationId" not in request.data:
             return JsonResponse(
-                {"error": ["missing required parameter(s)"]},
-                status=HTTPStatus.BAD_REQUEST,
-            )
-
-        if request.data["action"] != "markRead":
-            return JsonResponse(
-                {"error": ["unknown or invalid action", request.data["action"]]},
+                {"error": ["missing required parameter", "conversationId"]},
                 status=HTTPStatus.BAD_REQUEST,
             )
 
         try:
             conversation_id = int(request.data["conversationId"])
-            message_ids = [int(id) for id in request.data["messageIds"]]
-
             conversation = Conversation.objects.prefetch_related("messages").get(
                 id=conversation_id
             )
         except ValueError:
             return JsonResponse(
-                {"error": ["invalid parameter(s)"]}, status=HTTPStatus.BAD_REQUEST
+                {"error": ["invalid parameter", "conversationId"]},
+                status=HTTPStatus.BAD_REQUEST
             )
         except Conversation.DoesNotExist:
             return JsonResponse(
@@ -107,17 +93,9 @@ class Messages(APIView):
                 status=HTTPStatus.FORBIDDEN,
             )
 
-        messages = conversation.messages.filter(id__in=message_ids).exclude(senderId=user.id)
+        messages_to_mark = conversation.messages.exclude(senderId=user.id)
 
-        if len(messages) < len(message_ids):
-            return JsonResponse(
-                {"error": ["not all message ids were found (or some of them were sent by you)", message_ids]},
-                status=HTTPStatus.NOT_FOUND,
-            )
-
-        assert len(messages) == len(message_ids)
-
-        for message in messages:
+        for message in messages_to_mark:
             message.readByRecipient = True
             message.save()
 
