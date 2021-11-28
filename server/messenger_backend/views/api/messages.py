@@ -120,7 +120,5 @@ class Messages(APIView):
         for message in messages:
             message.readByRecipient = True
             message.save()
-            print(f'marked as read: {message}',
-                  Message.objects.get(id=message.id).readByRecipient)
 
         return HttpResponse(status=HTTPStatus.NO_CONTENT)
