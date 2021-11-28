@@ -23,15 +23,15 @@ export const addMessageToStore = (state, payload) => {
   });
 };
 
-export const readMessagesInStore = (state, payload) => {
-  const { convoId, messageIds } = payload;
+export const readConversationInStore = (state, payload) => {
+  const { convoId, userId } = payload;
 
   return state.map((convo) => {
     if (convo.id === convoId) {
       const convoCopy = { ...convo };
 
       convoCopy.messages = convoCopy.messages.map((message) => {
-        if (messageIds.includes(message.id)) {
+        if (message.senderId !== userId) {
           const messageCopy = { ...message };
           messageCopy.readByRecipient = true;
           return messageCopy;

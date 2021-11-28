@@ -31,16 +31,16 @@ def new_message(sid, message):
     )
 
 
-@sio.on("read-messages")
+@sio.on("read-conversation")
 def read_messages(sid, data):
     """Expects data in the form:
 
-    {"conversation-id": <conversation id>,
-     "message-ids": <list of ids>}
+    {"conversationId": <conversation id>,
+     "userId": <user id>}
     """
     sio.emit(
-        "read-messages",
-        {"conversationId": data["conversationId"], "messageIds": data["messageIds"]},
+        "read-conversation",
+        {"conversationId": data["conversationId"], "userId": data["userId"]},
         skip_sid=sid,
     )
 

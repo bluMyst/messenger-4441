@@ -3,7 +3,7 @@ import store from "./store";
 import {
   removeOfflineUser,
   addOnlineUser,
-  readMessages,
+  readConversation,
 } from "./store/conversations";
 import { handleNewMessageSocketEvent } from "./store/utils/thunkCreators";
 
@@ -24,8 +24,8 @@ socket.on("connect", () => {
     store.dispatch(handleNewMessageSocketEvent(data.message, data.sender));
   });
 
-  socket.on("read-messages", (data) => {
-    store.dispatch(readMessages(data.conversationId, data.messageIds));
+  socket.on("read-conversation", (data) => {
+    store.dispatch(readConversation(data.conversationId, data.userId));
   });
 });
 
