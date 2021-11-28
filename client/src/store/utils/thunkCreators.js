@@ -144,7 +144,6 @@ export const userReadConversation = (conversationId) => async (dispatch, getStat
   sendReadConversation(conversationId, state.user.id);
 }
 
-// set the given chat as active and mark all messages in that conversation as read.
 export const activateChat = (username) => (dispatch, getState) => {
   dispatch(setActiveChat(username));
 
@@ -153,7 +152,6 @@ export const activateChat = (username) => (dispatch, getState) => {
     return conversation.otherUser.username === username;
   });
 
-  // now that the chat is activated, we've read everything in it.
   dispatch(userReadConversation(conversation.id));
 }
 
@@ -165,14 +163,10 @@ export const handleNewMessageSocketEvent = (message, sender) => (dispatch, getSt
     return conversation.id === message.conversationId;
   });
 
-  // if we can't find the conversation, that means this message isn't for us
-  // and we can safely ignore it
   if (conversation === undefined) {
     return;
   }
 
-  // if we just got a new message in the active conversation (the one the user
-  // is currently looking at) we should automatically mark it as read.
   if (conversation.otherUser.username === state.activeConversation) {
     dispatch(userReadConversation(conversation.id));
   }
