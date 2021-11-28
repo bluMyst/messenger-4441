@@ -54,14 +54,12 @@ const ChatContent = (props) => {
           {latestMessageText}
         </Typography>
       </Box>
-      {nUnread > 0 ? (
+      {nUnread > 0 && (
         <Badge className={classes.unreadBadge}>
           <Typography variant='caption' align='center' className={classes.unreadBadgeText}>
             {nUnread}
           </Typography>
         </Badge>
-      ) : (
-        null
       )}
     </Box>
   );
