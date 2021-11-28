@@ -123,4 +123,4 @@ class Messages(APIView):
             print(f'marked as read: {message}',
                   Message.objects.get(id=message.id).readByRecipient)
 
-        return HttpResponse(status=HTTPStatus.OK)
+        return HttpResponse(status=HTTPStatus.NO_CONTENT)
