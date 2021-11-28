@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
 const ChatContent = (props) => {
   const classes = useStyles();
 
-  const { conversation, nUnread } = props;
+  const { conversation, unreadCount } = props;
   const { latestMessageText, otherUser } = conversation;
 
   return (
@@ -50,14 +50,14 @@ const ChatContent = (props) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={`${classes.previewText} ${nUnread > 0 ? classes.unreadPreviewText : ""}`}>
+        <Typography className={`${classes.previewText} ${unreadCount > 0 ? classes.unreadPreviewText : ""}`}>
           {latestMessageText}
         </Typography>
       </Box>
-      {nUnread > 0 && (
+      {unreadCount > 0 && (
         <Badge className={classes.unreadBadge}>
           <Typography variant='caption' align='center' className={classes.unreadBadgeText}>
-            {nUnread}
+            {unreadCount}
           </Typography>
         </Badge>
       )}

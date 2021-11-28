@@ -28,12 +28,12 @@ const Chat = (props) => {
     await props.activateChat(conversation.otherUser.username);
   };
 
-  const nUnread = conversation.messages.reduce((nUnread, message) => {
+  const unreadCount = conversation.messages.reduce((unreadCount, message) => {
     if (message.senderId === otherUser.id && !message.readByRecipient) {
-      return nUnread+1;
+      return unreadCount+1;
     }
 
-    return nUnread;
+    return unreadCount;
   }, 0);
 
   return (
@@ -44,7 +44,7 @@ const Chat = (props) => {
         online={otherUser.online}
         sidebar={true}
       />
-      <ChatContent conversation={conversation} nUnread={nUnread} />
+      <ChatContent conversation={conversation} unreadCount={unreadCount} />
     </Box>
   );
 };
