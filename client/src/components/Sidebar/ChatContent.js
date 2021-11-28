@@ -25,17 +25,16 @@ const useStyles = makeStyles((theme) => ({
   unreadBadge: {
     height: 20,
     minWidth: 20,
-    margin: 10,
     borderRadius: 10,
-    backgroundColor: "#3F92FF",
+    margin: theme.spacing(1),
+    backgroundColor: theme.palette.primary.main,
     alignSelf: "center",
-    paddingLeft: 7,
-    paddingRight: 7,
-    lineHeight: 2,
-    color: "#FFF",
-    textAlign: "center",
-    fontSize: 10,
-    fontWeight: "bold",
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+    color: theme.palette.getContrastText(theme.palette.primary.main),
+  },
+  unreadBadgeText: {
+    fontWeight: theme.typography.fontWeightBold,
   },
 }));
 
@@ -56,7 +55,11 @@ const ChatContent = (props) => {
         </Typography>
       </Box>
       {nUnread > 0 ? (
-        <Badge className={classes.unreadBadge}>{nUnread}</Badge>
+        <Badge className={classes.unreadBadge}>
+          <Typography variant='caption' align='center' className={classes.unreadBadgeText}>
+            {nUnread}
+          </Typography>
+        </Badge>
       ) : (
         null
       )}
