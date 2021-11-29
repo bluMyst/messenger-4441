@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 from django.contrib.auth.middleware import get_user
 from django.db.models import Max, Q
 from django.db.models.query import Prefetch
@@ -14,6 +16,16 @@ def get_unread_count(messages: List[Dict], user_id: int):
         if message["senderId"] != user_id and not message["readByRecipient"]:
             unread_count += 1
     return unread_count
+
+
+def get_last_read_message_id(messages: List[Dict], user_id: int):
+    """user_id should be the ID of the otherUser - *not* the ID of the requesting user!
+
+    this function assumes that the messages are in chronological order.
+    """
+    for message in reversed(messages):
+        if message["senderId"] != user_id and message["readByRecipient"]:
+            return message["id"]
 
 
 class Conversations(APIView):
@@ -68,6 +80,10 @@ class Conversations(APIView):
 
                 convo_dict["unreadCount"] = get_unread_count(
                     convo_dict["messages"], user.id
+                )
+
+                convo_dict["otherUser"]["lastReadMessageId"] = get_last_read_message_id(
+                    convo_dict["messages"], convo_dict["otherUser"]["id"]
                 )
 
                 conversations_response.append(convo_dict)

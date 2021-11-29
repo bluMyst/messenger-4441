@@ -21,6 +21,11 @@ export const addMessageToStore = (state, payload) => {
 
       if (message.senderId === convo.otherUser.id) {
         convoCopy.unreadCount++;
+      } else if (message.readByRecipient) {
+        // with the current code, it should be impossible for this condition to
+        // be met. but it doesn't hurt to make sure, in case the circumstances
+        // under which this reducer function is called change in the future.
+        convoCopy.otherUser.lastReadMessageId = message.id;
       }
 
       return convoCopy;
@@ -29,6 +34,17 @@ export const addMessageToStore = (state, payload) => {
     }
   });
 };
+
+// this function assumes that the messages are in chronological order
+const getLatestMessageIdNotByUser = (messages, userId) => {
+  for (let i = messages.length-1; i >= 0; i--) {
+    if (messages[i].senderId !== userId) {
+      return messages[i].id;
+    }
+  }
+
+  return null;
+}
 
 export const readConversationInStore = (state, payload) => {
   const { convoId, userId } = payload;
@@ -47,7 +63,11 @@ export const readConversationInStore = (state, payload) => {
         }
       });
 
-      if (userId !== convoCopy.otherUser.id) {
+      if (userId === convoCopy.otherUser.id) {
+        const otherUserCopy = { ...convoCopy.otherUser };
+        otherUserCopy.lastReadMessageId = getLatestMessageIdNotByUser(convoCopy.messages, userId);
+        convoCopy.otherUser = otherUserCopy;
+      } else {
         convoCopy.unreadCount = 0;
       }
 
