@@ -14,15 +14,23 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: -0.2,
   },
   previewText: (props) => ({
-    fontSize: 12,
     letterSpacing: -0.17,
-    color: props.unreadCount > 0 ? "#000" : "#9CADC8",
-    fontWeight: props.unreadCount > 0 ? "bold" : "normal",
+    lineHeight: 1,
+    color: props.unreadCount > 0 ? (
+      theme.palette.text.primary
+    ) : (
+      theme.palette.text.secondary
+    ),
+    fontWeight: props.unreadCount > 0 ? (
+      theme.typography.fontWeightBold
+    ) : (
+      theme.typography.fontWeightRegular
+    ),
   }),
   unreadBadge: {
-    height: 20,
-    minWidth: 20,
-    borderRadius: 10,
+    height: theme.spacing(2.5),
+    minWidth: theme.spacing(2.5),
+    borderRadius: theme.spacing(2),
     margin: theme.spacing(1),
     backgroundColor: theme.palette.primary.main,
     alignSelf: "center",
@@ -47,7 +55,7 @@ const ChatContent = (props) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={classes.previewText}>
+        <Typography variant='caption' className={classes.previewText}>
           {latestMessageText}
         </Typography>
       </Box>
