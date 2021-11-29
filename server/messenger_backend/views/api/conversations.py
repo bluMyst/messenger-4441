@@ -8,6 +8,14 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 
 
+def get_unread_count(messages: List[Dict], user_id: int):
+    unread_count = 0
+    for message in messages:
+        if message["senderId"] != user_id and not message["readByRecipient"]:
+            unread_count += 1
+    return unread_count
+
+
 class Conversations(APIView):
     """get all conversations for a user, include latest message text for preview, and all messages
     include other user model so we have info on username/profile pic (don't include current user info)
@@ -24,9 +32,7 @@ class Conversations(APIView):
             conversations = (
                 Conversation.objects.filter(Q(user1=user_id) | Q(user2=user_id))
                 .prefetch_related(
-                    Prefetch(
-                        "messages", queryset=Message.objects.order_by("createdAt")
-                    )
+                    Prefetch("messages", queryset=Message.objects.order_by("createdAt"))
                 )
                 .all()
             )
@@ -37,7 +43,9 @@ class Conversations(APIView):
                 convo_dict = {
                     "id": convo.id,
                     "messages": [
-                        message.to_dict(["id", "text", "senderId", "createdAt", "readByRecipient"])
+                        message.to_dict(
+                            ["id", "text", "senderId", "createdAt", "readByRecipient"]
+                        )
                         for message in convo.messages.all()
                     ],
                 }
@@ -58,10 +66,9 @@ class Conversations(APIView):
                 else:
                     convo_dict["otherUser"]["online"] = False
 
-                convo_dict["unreadCount"] = 0
-                for message in convo_dict["messages"]:
-                    if message["senderId"] == convo_dict["otherUser"]["id"] and not message["readByRecipient"]:
-                        convo_dict["unreadCount"] += 1
+                convo_dict["unreadCount"] = get_unread_count(
+                    convo_dict["messages"], user.id
+                )
 
                 conversations_response.append(convo_dict)
             conversations_response.sort(
