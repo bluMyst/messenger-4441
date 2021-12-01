@@ -5,7 +5,9 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  readConversation,
 } from "../conversations";
+import { setActiveChat } from "../activeConversation";
 import { gotUser, setFetchingStatus } from "../user";
 
 axios.interceptors.request.use(async function (config) {
@@ -117,3 +119,55 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
     console.error(error);
   }
 };
+
+const saveReadConversation = async (conversationId) => {
+  try {
+    const { data } = await axios.patch(
+      `/api/messages`,
+      {conversationId}
+    );
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const sendReadConversation = (conversationId, userId) => {
+  socket.emit("read-conversation", {conversationId, userId});
+}
+
+export const userReadConversation = (conversationId) => async (dispatch, getState) => {
+  const state = getState();
+
+  await saveReadConversation(conversationId);
+  dispatch(readConversation(conversationId, state.user.id));
+  sendReadConversation(conversationId, state.user.id);
+}
+
+export const activateChat = (username) => (dispatch, getState) => {
+  dispatch(setActiveChat(username));
+
+  const state = getState();
+  const conversation = state.conversations.find((conversation) => {
+    return conversation.otherUser.username === username;
+  });
+
+  dispatch(userReadConversation(conversation.id));
+}
+
+export const handleNewMessageSocketEvent = (message, sender) => (dispatch, getState) => {
+  dispatch(setNewMessage(message, sender));
+
+  const state = getState();
+  const conversation = state.conversations.find((conversation) => {
+    return conversation.id === message.conversationId;
+  });
+
+  if (conversation === undefined) {
+    return;
+  }
+
+  if (conversation.otherUser.username === state.activeConversation) {
+    dispatch(userReadConversation(conversation.id));
+  }
+}

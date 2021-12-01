@@ -7,6 +7,7 @@ from .conversation import Conversation
 class Message(utils.CustomModel):
     text = models.TextField(null=False)
     senderId = models.IntegerField(null=False)
+
     conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
@@ -14,5 +15,8 @@ class Message(utils.CustomModel):
         related_name="messages",
         related_query_name="message"
     )
+
+    readByRecipient = models.BooleanField(null=False, default=False)
+
     createdAt = models.DateTimeField(auto_now_add=True, db_index=True)
     updatedAt = models.DateTimeField(auto_now=True)
