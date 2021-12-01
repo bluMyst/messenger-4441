@@ -10,14 +10,6 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 
 
-def get_unread_count(messages: List[Dict], user_id: int):
-    unread_count = 0
-    for message in messages:
-        if message["senderId"] != user_id and not message["readByRecipient"]:
-            unread_count += 1
-    return unread_count
-
-
 def get_last_read_message_id(messages: List[Dict], user_id: int):
     """user_id should be the ID of the otherUser - *not* the ID of the requesting user!
 
@@ -78,8 +70,10 @@ class Conversations(APIView):
                 else:
                     convo_dict["otherUser"]["online"] = False
 
-                convo_dict["unreadCount"] = get_unread_count(
-                    convo_dict["messages"], user.id
+                convo_dict["unreadCount"] = (
+                    convo.messages.exclude(senderId=user_id)
+                    .filter(readByRecipient=False)
+                    .count()
                 )
 
                 convo_dict["otherUser"]["lastReadMessageId"] = get_last_read_message_id(
